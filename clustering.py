@@ -9,7 +9,8 @@ class Pixel:
         self.rgb = rgb
 
     def __str__(self):
-        return 'x:{}, y:{}, rgb:{}'.format(self.x, self.y, self.rgb)
+        return 'x:{}, y:{}, rgb:{}'.\
+            format(self.x, self.y, self.rgb)
 
 
 class Cluster:
@@ -50,7 +51,8 @@ class Cluster:
         self.list_pixels.clear()
 
     def __str__(self):
-        return 'x:{}, y:{}, rgb:{}'.format(self.cur_x, self.cur_y, self.rgb)
+        return 'x:{}, y:{}, rgb:{}'.\
+            format(self.cur_x, self.cur_y, self.rgb)
 
 
 def initial_centre(k, list_pixels):
@@ -97,7 +99,8 @@ def start(image, k=32):
             break
     weight, height = im.size
     return tuple([(len(cluster.list_pixels) / len(pixels),
-                  cluster.cur_x/weight, cluster.cur_y/height) for cluster in clusarr])
+                  cluster.cur_x / weight, cluster.cur_y / height)
+                  for cluster in clusarr])
 
 
 def rgb_dist(pixel1, pixel2):

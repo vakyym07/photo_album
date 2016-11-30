@@ -32,11 +32,11 @@ def get_images(path):
 
 
 class Node:
-    def __init__(self, cluster):
+    def __init__(self, cluster, radius=None):
         self.cluster = cluster
         self.left_child = None
         self.right_child = None
-        self.radius = None
+        self.radius = radius
 
     def bind(self, left_child, right_child):
         self.left_child = left_child
@@ -45,8 +45,8 @@ class Node:
     def set_radius(self, image_vector):
         radius = 0
         for image in self.cluster.images:
-            c_dist = similar_function(image_vector[image],
-                                      image_vector[self.cluster.centre])
+            c_dist = similar_function(
+                image_vector[image], image_vector[self.cluster.centre])
             if c_dist > radius:
                 radius = c_dist
         self.radius = radius
@@ -62,10 +62,10 @@ class Tree:
         return clusarr
 
     def inorder_tree_walk(self, node, radius, clusarr):
-        if node.radius <= radius:
-            clusarr.append(node.cluster)
-            return
         if node is not None:
+            if node.radius <= radius:
+                clusarr.append(node.cluster)
+                return
             self.inorder_tree_walk(node.left_child, radius, clusarr)
             self.inorder_tree_walk(node.right_child, radius, clusarr)
 
@@ -88,8 +88,8 @@ class Cluster:
         for image in self.images:
             c_sum = 0
             for c_image in self.images:
-                c_sum += similar_function(image_vector[image],
-                                          image_vector[c_image])
+                c_sum += similar_function(
+                    image_vector[image], image_vector[c_image])
             if c_sum < weight:
                 weight = c_sum
                 centre = image
@@ -143,7 +143,8 @@ def get_dist_matrix(clusarr, image_vector):
                 if dist_matrix.get(cluster) is None:
                     dist_matrix[cluster] = []
                 dist_matrix[cluster].append(
-                    (c_cluster, dist_clusters(cluster, c_cluster, image_vector)))
+                    (c_cluster,
+                     dist_clusters(cluster, c_cluster, image_vector)))
     return dist_matrix
 
 
@@ -201,9 +202,6 @@ def start_clustering(path, r=0.33):
     path = os.path.normpath(path)
     tree = start(path)
     clusarr = tree.get_clusters(r)
-    for cluster in clusarr:
-        print(cluster.images)
-
     if os.access(path, os.W_OK):
         c_path = os.path.join(path, "Clusters")
         try:
@@ -227,8 +225,7 @@ def start_clustering(path, r=0.33):
                 except PermissionError:
                     raise PermissionError("Permission denied")
                 except FileNotFoundError:
-                    raise FileNotFoundError("No such file or directory: {}".format('dst'))
+                    raise FileNotFoundError(
+                        "No such file or directory: {}".format('dst'))
     else:
         raise PermissionError("Permission denied")
-
-start_clustering("C:\\Users\\Артём\\PycharmProjects\\PhotoAlbum\\Test")
