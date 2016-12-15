@@ -32,11 +32,11 @@ class Cluster:
         if len(self.list_pixels) != 0:
             weight = sys.float_info.max
             for pixel in self.list_pixels:
-                sum = 0
+                c_sum = 0
                 for c_pixel in self.list_pixels:
-                    sum += rgb_dist(pixel.rgb, c_pixel.rgb)
-                if sum < weight:
-                    weight = sum
+                    c_sum += rgb_dist(pixel.rgb, c_pixel.rgb)
+                if c_sum < weight:
+                    weight = c_sum
                     centre = pixel
             self.last_x = self.cur_x
             self.last_y = self.cur_y
@@ -83,7 +83,7 @@ def bind(list_pixels, clusarr):
 
 
 def start(image, k=32):
-    im = image.resize((16, 16))
+    im = image.resize((16, 16)).convert('RGB')
     pixels = [Pixel(x, y, im.getpixel((x, y)))
               for y in range(im.size[1]) for x in range(im.size[1])]
     clusarr = initial_centre(k, pixels)

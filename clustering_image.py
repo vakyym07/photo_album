@@ -5,6 +5,12 @@ import math
 import sys
 from PIL import Image
 from shutil import copyfile, rmtree
+import logging
+
+logging.basicConfig(format=u'%(filename)s[LINE:%(lineno)d]# %(levelname)'
+                           u'-8s [%(asctime)s]  %(message)s',
+                    level=logging.DEBUG,
+                    filename=u'log.log')
 
 
 def load_images(path):
@@ -12,13 +18,11 @@ def load_images(path):
     if os.path.exists(path):
         for e in os.listdir(path=path):
             if os.path.isfile(os.path.join(path, e)):
-                try:
-                    image = Image.open(os.path.join(path, e))
-                    images.append(image)
-                except OSError:
-                    pass
+                images.append(os.path.join(path, e))
+                logging.info(u'{} added'.format(os.path.join(path, e)))
         return images
     else:
+        logging.error(u'{} not found'.format(path))
         raise FileNotFoundError('The system can not find '
                                 'the path specified: "{}"'.format(path))
 
@@ -26,8 +30,15 @@ def load_images(path):
 def get_images(path):
     images = load_images(path)
     image_vector = {}
-    for image in images:
-        image_vector[image.filename] = clustering.start(image)
+    for path in images:
+        try:
+            image = Image.open(path)
+            image_vector[image.filename] = clustering.start(image)
+            image.close()
+            logging.info('for image {} vector is {}'.format(image.filename, image_vector[image.filename]))
+        except OSError:
+            logging.error(u'{} not image'.format(path))
+            pass
     return image_vector
 
 
@@ -110,6 +121,7 @@ def initial_clusters(images):
     for image in images:
         cluster = Cluster(centre=image)
         clusarr.add(cluster)
+    logging.info('A new cluster created')
     return clusarr
 
 
@@ -117,16 +129,19 @@ def dist(comp1, comp2):
     if comp1[0] > 0 and comp2[0] > 0:
         return math.sqrt(math.pow(comp1[1] - comp2[1], 2) +
                          math.pow(comp1[2] - comp2[2], 2)) / \
-               (32 * math.sqrt(2))
+               (16 * math.sqrt(2))
     else:
-        return 1
+        return 0
 
 
 def similar_function(vector1, vector2, alpha=0.1, betta=0.5):
     res = 0
     for i in range(len(vector1)):
-        res += (abs(vector1[i][0] - vector2[i][0]) + alpha) * \
-                   (dist(vector1[i], vector2[i]) + betta) - alpha * betta
+        dp = abs(vector1[i][0] - vector2[i][0]) + alpha
+        dxy = dist(vector1[i], vector2[i]) + betta
+        res += dp * dxy - alpha * betta
+    logging.info('dist between {} and {} is {}'.
+                 format(vector1, vector2, res))
     return res
 
 
@@ -158,16 +173,20 @@ def min_dist_between_clusters(dist_matrix):
                 min_dist = c_cluster[1]
                 f_cluster = cluster
                 s_cluster = c_cluster[0]
-    return f_cluster, s_cluster
+    logging.info(u'the nearest clusters are {} and {}, dist = {}'.
+                 format(f_cluster.centre, s_cluster.centre, min_dist))
+    return f_cluster, s_cluster, min_dist
 
 
 def merge_cluster(cluster1, cluster2, image_vector):
     new_cluster = Cluster(images=cluster1.images + cluster2.images)
     new_cluster.set_centre(image_vector)
+    logging.info('A new cluster created')
     return new_cluster
 
 
 def create_node(cluster, cluster_node):
+    logging.info('Formed a new node')
     if cluster_node.get(cluster) is not None:
         return cluster_node[cluster]
     cluster_node[cluster] = Node(cluster)
@@ -181,7 +200,8 @@ def start(path):
 
     while len(clusarr) > 1:
         dist_matrix = get_dist_matrix(clusarr, image_vector)
-        f_cluster, s_cluster = min_dist_between_clusters(dist_matrix)
+        f_cluster, s_cluster, min_dist = min_dist_between_clusters(dist_matrix)
+
         new_cluster = merge_cluster(f_cluster, s_cluster, image_vector)
 
         c_node1 = create_node(f_cluster, cluster_node)
@@ -198,7 +218,14 @@ def start(path):
     return Tree(cluster_node[new_cluster])
 
 
-def start_clustering(path, r=0.33):
+def do_copy(cluster, dst_path):
+    for image in cluster.images:
+        head_image, tail_image = os.path.split(image)
+        dst = os.path.join(dst_path, tail_image)
+        copyfile(image, dst)
+
+
+def start_clustering(path, r=0.34):
     path = os.path.normpath(path)
     tree = start(path)
     clusarr = tree.get_clusters(r)
@@ -206,6 +233,7 @@ def start_clustering(path, r=0.33):
         c_path = os.path.join(path, "Clusters")
         try:
             os.mkdir(c_path)
+            logging.info('Create a dir:{}'.format(c_path))
         except FileExistsError:
             pass
         for cluster in clusarr:
@@ -213,19 +241,12 @@ def start_clustering(path, r=0.33):
             dst_path = os.path.join(c_path, tail.split('.')[0])
             try:
                 os.mkdir(dst_path)
+                logging.info('Create a dir:{}'.format(dst_path))
             except FileExistsError:
                 rmtree(dst_path)
                 os.mkdir(dst_path)
-
-            for image in cluster.images:
-                head_image, tail_image = os.path.split(image)
-                dst = os.path.join(dst_path, tail_image)
-                try:
-                    copyfile(image, dst)
-                except PermissionError:
-                    raise PermissionError("Permission denied")
-                except FileNotFoundError:
-                    raise FileNotFoundError(
-                        "No such file or directory: {}".format('dst'))
+                logging.info('Create a dir:{}'.format(dst_path))
+            do_copy(cluster, dst_path)
     else:
+        logging.info('Permission denied: {}'.format(path))
         raise PermissionError("Permission denied")

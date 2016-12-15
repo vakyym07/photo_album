@@ -49,10 +49,3 @@ class Test(unittest.TestCase):
         clusarr = clustering.bind(list_pixels, clusarr)
         assert True, len(clusarr[0].list_pixels) == 2 and \
             len(clusarr[1].list_pixels) == 2
-
-
-
-
-
-
-
