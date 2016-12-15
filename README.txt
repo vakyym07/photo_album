@@ -10,6 +10,3 @@
 1)Python 3.5 - https://www.python.org
 2)PyQt5 - https://www.riverbankcomputing.com/software/pyqt/download5
 3)PIL
-4)Numpy 1.11.2 - https://sourceforge.net/projects/numpy/files/NumPy
-5)OpenCV 3.1.0:
-	- for 
